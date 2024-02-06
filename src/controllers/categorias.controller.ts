@@ -9,9 +9,13 @@ export class CategoriasController {
 
   @Post()
   async createCategoria(@Body() createCategoriaDTO: CreateCategoriaDTO) {
-    const categoria = await this.categoriasService.createCategoria(createCategoriaDTO);
-    return { categoria };
-  }
+    try {
+      const categoria = await this.categoriasService.createCategoria(createCategoriaDTO);
+      return { categoria };
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }  
 
   @Get()
   async findAllCategorias() {
@@ -20,9 +24,13 @@ export class CategoriasController {
   }
 
   @Get(':categoriaId')
-  async findOneCategoria(@Param('categoriaId') categoriaId: number) {
+  async findOneCategoria(@Param('categoriaId') categoriaId: string) {
     try {
-      const categoria = await this.categoriasService.findOneCategoria(categoriaId);
+      const id = parseInt(categoriaId);
+      if (isNaN(id)) {
+        throw new NotFoundException('ID da categoria deve ser um número.');
+      }
+      const categoria = await this.categoriasService.findOneCategoria(id);
       return { categoria };
     } catch (error) {
       throw new NotFoundException(error.message);
@@ -30,9 +38,13 @@ export class CategoriasController {
   }
 
   @Patch(':categoriaId')
-  async updateCategoria(@Param('categoriaId') categoriaId: number, @Body() updateCategoriaDTO: UpdateCategoriaDTO) {
+  async updateCategoria(@Param('categoriaId') categoriaId: string, @Body() updateCategoriaDTO: UpdateCategoriaDTO) {
     try {
-      const categoriaAtualizada = await this.categoriasService.updateCategoria(categoriaId, updateCategoriaDTO);
+      const id = parseInt(categoriaId);
+      if (isNaN(id)) {
+        throw new NotFoundException('ID da categoria deve ser um número.');
+      }
+      const categoriaAtualizada = await this.categoriasService.updateCategoria(id, updateCategoriaDTO);
       return { categoria: categoriaAtualizada };
     } catch (error) {
       throw new NotFoundException(error.message);
@@ -40,9 +52,13 @@ export class CategoriasController {
   }
 
   @Delete(':categoriaId')
-  async deleteCategoria(@Param('categoriaId') categoriaId: number) {
+  async deleteCategoria(@Param('categoriaId') categoriaId: string) {
     try {
-      const categoriaDeletada = await this.categoriasService.deleteCategoria(categoriaId);
+      const id = parseInt(categoriaId);
+      if (isNaN(id)) {
+        throw new NotFoundException('ID da categoria deve ser um número.');
+      }
+      const categoriaDeletada = await this.categoriasService.deleteCategoria(id);
       return { categoria: categoriaDeletada };
     } catch (error) {
       throw new NotFoundException(error.message);

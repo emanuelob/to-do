@@ -21,12 +21,12 @@ model CategoriaEntity {
 
 model TarefaEntity {
   id        Int      @id @default(autoincrement())
-  categoriaId Int
+  categoriaId Int?
   nome      String
   isActive  Boolean
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  categoria CategoriaEntity @relation(fields: [categoriaId], references: [id])
+  categoria CategoriaEntity? @relation(fields: [categoriaId], references: [id])
 
   @@map("tarefas")
 }

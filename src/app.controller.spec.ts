@@ -15,8 +15,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return "Bem-vindo ao meu gerenciador de tarefas, TO DO!"', () => {
+      expect(appController.getHello()).toBe('Bem-vindo ao meu gerenciador de tarefas, TO DO!');
     });
   });
 });

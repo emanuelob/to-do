@@ -24,47 +24,25 @@ export class TarefasController {
   }
 
   @Get(':tarefaId')
-  async getTarefaById(@Param('tarefaId') tarefaId: number) {
+  async getTarefaById(@Param('tarefaId') tarefaId: string, @Query('isActive') isActiveParam: string) {
     try {
-      const tarefa = await this.tarefasService.getTarefaById(tarefaId);
+      if (isActiveParam !== undefined && (isActiveParam === 'true' || isActiveParam === 'false')) {
+        const isActive = isActiveParam === 'true';
+        return this.getTarefasByStatus(isActive);
+      }
+      const id = parseInt(tarefaId);
+      if (isNaN(id)) {
+        throw new NotFoundException('ID da tarefa deve ser um número ou uma solicitação de filtro {true || false}.');
+      }
+      const tarefa = await this.tarefasService.getTarefaById(id);
       return { tarefa };
     } catch (error) {
       throw new NotFoundException(error.message);
     }
   }
 
-  @Patch(':tarefaId')
-  async updateTarefa(@Param('tarefaId') tarefaId: number, @Body() updateTarefaDTO: UpdateTarefaDTO) {
-    try {
-      const tarefaAtualizada = await this.tarefasService.updateTarefa(tarefaId, updateTarefaDTO);
-      return { tarefa: tarefaAtualizada };
-    } catch (error) {
-      throw new NotFoundException(error.message);
-    }
-  }
-
-  @Delete(':tarefaId')
-  async deleteTarefa(@Param('tarefaId') tarefaId: number) {
-    try {
-      const tarefaDeletada = await this.tarefasService.deleteTarefa(tarefaId);
-      return { tarefa: tarefaDeletada };
-    } catch (error) {
-      throw new NotFoundException(error.message);
-    }
-  }
-
-  @Delete('deltacompletas')
-  async deleteTarefasCompletas() {
-    try {
-      await this.tarefasService.deleteTarefasCompletas();
-      return { message: 'Todas as tarefas completas foram deletadas com sucesso.' };
-    } catch (error) {
-      throw new NotFoundException(error.message);
-    }
-  }
-
   @Get('filtro')
-  async getTarefasByStatus(@Query('isActive') isActive: boolean) {
+  async getTarefasByStatus(isActive: boolean) {
     try {
       const tarefas = await this.tarefasService.getTarefasByStatus(isActive);
       return { tarefas };
@@ -74,13 +52,59 @@ export class TarefasController {
   }
 
   @Get('categoria/:categoriaId')
-  async getTarefasByCategoriaId(@Param('categoriaId') categoriaId: number) {
+  async getTarefasByCategoriaId(@Param('categoriaId') categoriaId: string) {
     try {
-      const tarefas = await this.tarefasService.getTarefasByCategoriaId(categoriaId);
+      const id = parseInt(categoriaId);
+      if (isNaN(id)) {
+        throw new NotFoundException('ID da categoria deve ser um número.');
+      }
+      const tarefas = await this.tarefasService.getTarefasByCategoriaId(id);
       return { tarefas };
     } catch (error) {
       throw new NotFoundException(error.message);
     }
   }
+
+  @Patch(':tarefaId')
+  async updateTarefa(@Param('tarefaId') tarefaId: string, @Body() updateTarefaDTO: UpdateTarefaDTO) {
+    try {
+      const id = parseInt(tarefaId);
+      if (isNaN(id)) {
+        throw new NotFoundException('ID da tarefa deve ser um número.');
+      }
+      const tarefaAtualizada = await this.tarefasService.updateTarefa(id, updateTarefaDTO);
+      return { tarefa: tarefaAtualizada };
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
+
+  @Delete(':tarefaId')
+  async deleteTarefa(@Param('tarefaId') tarefaId: string) {
+    try {
+      if (tarefaId === 'completas') {
+        return await this.deleteTarefasCompletas();
+      }
   
+      const id = parseInt(tarefaId);
+      if (isNaN(id)) {
+        throw new NotFoundException('ID da tarefa deve ser um número ou solicitação de exclusão.');
+      }
+  
+      const tarefaDeletada = await this.tarefasService.deleteTarefa(id);
+      return { tarefa: tarefaDeletada };
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
+  
+  @Delete('completas')
+  async deleteTarefasCompletas() {
+    try {
+      const { message, tarefasExcluidas } = await this.tarefasService.deleteTarefasCompletas();
+      return { message, tarefasExcluidas };
+    } catch (error) {
+      throw new NotFoundException(error.message);
+    }
+  }
 }

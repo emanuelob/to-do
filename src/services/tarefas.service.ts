@@ -9,21 +9,25 @@ export class TarefasService {
 
   async addTarefa(createTarefaDto: CreateTarefaDTO) {
     
-    const categoriaExists = await this.prisma.categoriaEntity.findUnique({
-      where: { id: createTarefaDto.categoriaId },
-    });
+    let categoriaId = createTarefaDto.categoriaId ?? null;
+
+    if (createTarefaDto.categoriaId !== undefined && createTarefaDto.categoriaId !== null) {
+      const categoriaExists = await this.prisma.categoriaEntity.findUnique({
+        where: { id: createTarefaDto.categoriaId },
+      });
   
-    if (!categoriaExists) {
-      throw new NotFoundException('Não foi possível adicionar a tarefa. A Categoria não existe!');
+      if (!categoriaExists) {
+        throw new NotFoundException('Não foi possível adicionar a tarefa. A Categoria não existe!');
+      }
     }
   
     const tarefa = await this.prisma.tarefaEntity.create({
-        data: {
-          nome: createTarefaDto.nome,
-          categoriaId: createTarefaDto.categoriaId,
-          isActive: true, 
-        },
-      });
+      data: {
+        nome: createTarefaDto.nome,
+        categoriaId,
+        isActive: true,
+      },
+    });
     return tarefa;
   }
 
@@ -45,18 +49,34 @@ export class TarefasService {
     return tarefa;
   }
 
-  async updateTarefa(tarefaId: number, updateTarefaDto: UpdateTarefaDTO) {
-    const tarefa = await this.prisma.tarefaEntity.findUnique({
+  async updateTarefa(tarefaId: number, updateTarefaDTO: UpdateTarefaDTO) {
+    const { nome, categoriaId, isActive } = updateTarefaDTO;
+
+    const tarefaExistente = await this.prisma.tarefaEntity.findUnique({
       where: { id: tarefaId },
     });
 
-    if (!tarefa) {
+    if (!tarefaExistente) {
       throw new NotFoundException(`Tarefa com ID ${tarefaId} não encontrada.`);
+    }
+
+    if (categoriaId !== undefined) {
+      const categoriaExistente = await this.prisma.categoriaEntity.findUnique({
+        where: { id: categoriaId },
+      });
+
+      if (!categoriaExistente) {
+        throw new NotFoundException(`A categoria com ID ${categoriaId} não existe.`);
+      }
     }
 
     const tarefaAtualizada = await this.prisma.tarefaEntity.update({
       where: { id: tarefaId },
-      data: updateTarefaDto,
+      data: {
+        nome,
+        categoriaId: categoriaId ?? undefined, 
+        isActive,
+      },
     });
 
     return tarefaAtualizada;
@@ -79,11 +99,23 @@ export class TarefasService {
   } 
 
   async deleteTarefasCompletas() {
-    await this.prisma.tarefaEntity.deleteMany({
+    const tarefasExcluidas = await this.prisma.tarefaEntity.findMany({
       where: {
         isActive: false,
       },
     });
+  
+    if (tarefasExcluidas.length === 0) {
+      throw new NotFoundException('Não há tarefas completas para serem deletadas.');
+    }
+  
+    const { count } = await this.prisma.tarefaEntity.deleteMany({
+      where: {
+        isActive: false,
+      },
+    });
+  
+    return { message: 'Todas as tarefas completas foram deletadas com sucesso.', tarefasExcluidas };
   }
 
   async getTarefasByStatus(isActive: boolean) {
@@ -92,15 +124,29 @@ export class TarefasService {
         isActive,
       },
     });
+  
+    if (tarefas.length === 0) {
+      throw new NotFoundException(`Não foram encontradas tarefas com o status ${isActive ? 'ativo' : 'inativo'}.`);
+    }
+  
     return tarefas;
   }
 
   async getTarefasByCategoriaId(categoriaId: number) {
+    const categoria = await this.prisma.categoriaEntity.findUnique({
+      where: { id: categoriaId },
+    });
+  
+    if (!categoria) {
+      throw new NotFoundException(`Não existe categoria com o ID ${categoriaId}.`);
+    }
+  
     const tarefas = await this.prisma.tarefaEntity.findMany({
       where: {
         categoriaId,
       },
     });
+  
     return tarefas;
   }
 }

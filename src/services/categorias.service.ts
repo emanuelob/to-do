@@ -25,7 +25,7 @@ export class CategoriasService {
     });
 
     if (!categoria) {
-      throw new NotFoundException(`Categoria com ID ${categoriaId} não encontrada`);
+      throw new NotFoundException(`Categoria com ID ${categoriaId} não encontrada.`);
     }
 
     return categoria;
